@@ -53,38 +53,49 @@
 
 <script>
 import sprite from "../images/bat-sprite.png"
+import coinSprite from "../images/coin-sprite.png"
 const TOP = 2
 const BOTTOM = 4
 const RIGHT = 8
 const LEFT = 16
+const CHARACTER_WIDTH = 16
+const CHARACTER_HEIGHT = 16
 export default {
     data() {
         return {
             timer: null,
             context: null,
             direction: RIGHT,
+            pos: {
+                x: 50,
+                y: 50,
+            },
             frame: 0,
+            coinFrame: 0,
+            coins: [{x:1,y:5}, {x:6,y:7}],
+            moves: [{x:2,y:1},{x:3,y:1},{x:3,y:2},{x:4,y:2}],
             square_width: 0,
             square_height: 0,
-            sprite: new Image()
+            sprite: new Image(),
+            coin_sprite: new Image(),
         }
     },
     mounted() {
-        console.log(window.innerWidth)
         this.sprite.src = sprite
+        this.coin_sprite.src = coinSprite
         this.ctx = this.$refs.game.getContext("2d")
         this.$refs.game.width = window.innerWidth / 2
         this.$refs.game.height = window.innerHeight - 53
-        this.square_width = this.$refs.game.width / 20
-        // console.log("ok", this.$refs.game.height, this.$refs.game.width, (this.$refs.game.height / this.$refs.game.width).toPrecision(3))
-        console.log(this.$refs.game.height, this.$refs.game.width)
+        this.square_width = 48
         this.square_height = this.square_width
-        this.timer = setInterval(this.update, 100)
+        this.pos.x = 8
+        this.pos.y = 8
+        this.timer = setInterval(this.update, 10)
     },
     methods: {
         update() {
-            this.frame = (this.frame + 1) % 4
-            console.log("update")
+            this.frame = this.frame + 1
+            this.coinFrame = (this.coinFrame + 1) % 8
             this.ctx.clearRect(0, 0, this.$refs.game.width, this.$refs.game.height)
 
             let k = 0
@@ -99,15 +110,43 @@ export default {
                 this.ctx.fillRect(this.square_width * k, 0, this.square_width, this.$refs.game.height)
                 k = k+2
             }
-            this.ctx.drawImage(this.sprite, this.frame * 32, 32, 32, 32, 32, 32, 32, 32)
-            // this.ctx.beginPath();
-            // this.ctx.arc(500*Math.random(), 75+10*Math.random(), 50, 0, 2 * Math.PI)
-            // this.ctx.stroke()
+            for(let coin of this.coins) {
+                this.ctx.drawImage(this.coin_sprite, this.coinFrame * 16, 0, 16, 16, coin.x * this.square_width + (this.square_width-16)/2, coin.y * this.square_height + (this.square_height - 16)/2, 16, 16)
+            }
+            let yoffset = 0
+            if(this.moves.length) {
+                if (this.moves[0].x < this.pos.x) {
+                    this.direction = LEFT
+                    yoffset = 3 * 32
+                    this.pos.x -= 1
+                }
+                else if (this.moves[0].x > this.pos.x) {
+                    this.direction = RIGHT
+                    yoffset = 1 * 32
+                    this.pos.x += 1
+                }
+                else if (this.moves[0].y < this.pos.y) {
+                    this.direction = TOP
+                    yoffset = 2 * 32
+                    this.pos.y -= 1
+                }
+                else if (this.moves[0].y > this.pos.y) {
+                    this.direction = BOTTOM
+                    yoffset = 0 * 32
+                    this.pos.y += 1
+                }
+
+                if (this.frame === 48) {
+                    this.moves.shift()
+                    this.frame = 0
+                }
+            }
+            this.ctx.drawImage(this.sprite, (this.frame % 4) * 32, yoffset, 32, 32, this.pos.x, this.pos.y, 32, 32)
         },
+    },
+    destroyed() {
+        clearInterval(this.timer)
     }
-    // destroyed() {
-    //     clearInterval(this.timer)
-    // }
 }
 </script>
 
@@ -211,9 +250,7 @@ position: sticky;
     width: 50vw;
 }
 .game {
-    width: 100vw;
     background: #388138;
-    height: calc(100vh - 53px);
 }
 .right.play-column {
     background: #f5f5f5;
