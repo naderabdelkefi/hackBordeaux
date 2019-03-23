@@ -1,7 +1,9 @@
 import fastify from "fastify"
 
 const app = fastify({
-    logger: true
+    logger: {
+        prettyPrint: true
+    }
 })
 
 app.get('/', async (request, reply) => {
